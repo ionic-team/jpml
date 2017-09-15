@@ -1,0 +1,39 @@
+{
+  "name": "@ionic/jpml",
+  "version": "0.0.1",
+  "description": "Convert SVG/HTML/XML to JSONP Markup Language",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "publish": "np",
+    "watch": "tsc --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ionic-team/jpml.git"
+  },
+  "keywords": [
+    "svg",
+    "xml",
+    "html",
+    "jsonp"
+  ],
+  "author": "Ionic Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ionic-team/jpml/issues"
+  },
+  "homepage": "https://github.com/ionic-team/jpml#readme",
+  "dependencies": {
+    "xml2js": "^0.4.19"
+  },
+  "devDependencies": {
+    "@types/xml2js": "^0.4.0",
+    "np": "^2.16.0",
+    "typescript": "^2.5.2"
+  }
+}
