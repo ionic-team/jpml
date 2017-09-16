@@ -9,9 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "publish": "np",
-    "test": "jest",
-    "test.watch": "jest --watch",
+    "deploy": "np",
     "watch": "tsc --watch"
   },
   "repository": {
