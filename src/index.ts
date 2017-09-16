@@ -1,9 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as xml2js from 'xml2js';
 
 
-export function parseDirectories(opts: ParseFilesOptions) {
+export function generate(opts: GenerateOptions) {
   if (!opts.include) {
     throw new Error(`invalid include directories`);
   }
@@ -30,7 +29,7 @@ export function parseDirectories(opts: ParseFilesOptions) {
 }
 
 
-function walkDir(dir: string, opts: ParseFilesOptions) {
+function walkDir(dir: string, opts: GenerateOptions) {
   if (!path.isAbsolute(dir)) {
     dir = path.join(process.cwd(), dir);
   }
@@ -81,21 +80,20 @@ function walkDir(dir: string, opts: ParseFilesOptions) {
                     contentKey = opts.key(contentKey);
                   }
 
-                  parse({
+                  const jsonpContent = genereateJsonp({
                     contentKey: contentKey,
                     contentText: fileContent,
-                    intro: opts.intro,
-                    outro: opts.outro
-                  }).then(jsonpContent => {
-                    const outFile = path.join(opts.outDir, fileName);
-                    fs.writeFile(outFile, jsonpContent, { encoding: 'utf-8'}, (err) => {
-                      if (err) {
-                        reject(err);
-                      } else {
-                        resolve();
-                      }
-                    });
-                  }).catch(reject);
+                    wrapper: opts.wrapper
+                  });
+
+                  const outFile = path.join(opts.outDir, fileName);
+                  fs.writeFile(outFile, jsonpContent, { encoding: 'utf-8'}, (err) => {
+                    if (err) {
+                      reject(err);
+                    } else {
+                      resolve();
+                    }
+                  });
 
                 } catch (e) {
                   reject(e);
@@ -112,58 +110,26 @@ function walkDir(dir: string, opts: ParseFilesOptions) {
 }
 
 
-export function parse(opts: ParseOptions): Promise<string> {
-  return new Promise((resolve, reject) => {
-    opts.intro = opts.intro || INTRO;
-    opts.outro = opts.outro || OUTRO;
-
-    if (!opts.contentText) {
-      resolve(generateJsonStr({}, opts.contentKey, opts));
-      return;
-    }
-
-    xml2js.parseString(opts.contentText, (err, result) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(generateJsonStr(result, opts.contentKey, opts));
-      }
-    });
-  });
+export function genereateJsonp(opts: GenereateJsonpOptions) {
+  opts.wrapper = opts.wrapper || defaultWrapper;
+  return opts.wrapper(opts.contentText, opts.contentKey);
 }
 
 
-function generateJsonStr(contentJsonData: any, contentKey: string, opts: ParseOptions) {
-  const jsonStr = JSON.stringify(contentJsonData)
-
-  const output: string[] = [opts.intro, jsonStr];
-
-  if (typeof contentKey === 'string') {
-    output.push(`,"${contentKey}"`);
-  }
-
-  output.push(opts.outro);
-
-  return output.join('');
-}
-
-
-export interface ParseOptions {
+export interface GenereateJsonpOptions {
   contentKey: string;
   contentText: string;
-  intro?: string;
-  outro?: string;
+  wrapper?: (contextText: string, contentKey?: string) => string;
 }
 
 
-export interface ParseFilesOptions {
+export interface GenerateOptions {
   include: string|string[];
   outDir: string;
-  intro?: string;
-  outro?: string;
   filter?: (path: string) => boolean;
   fileName?: (path: string) => string;
   key?: (path: string) => string;
+  wrapper?: (contextText: string, contentKey?: string) => string;
 }
 
 
@@ -173,5 +139,6 @@ interface FileData {
 }
 
 
-const INTRO = `loadJpml(`;
-const OUTRO = `);`;
+function defaultWrapper(contextText: string, contentKey?: string) {
+  return contextText
+}
