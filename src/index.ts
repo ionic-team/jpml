@@ -13,15 +13,27 @@ export function generate(opts: GenerateOptions) {
     throw new Error(`invalid include directories`);
   }
 
-  if (!path.isAbsolute(opts.outDir)) {
-    opts.outDir = path.join(process.cwd(), opts.outDir);
+  if (typeof opts.outDir === 'string') {
+    opts.outDir = [opts.outDir];
+  }
+  if (!Array.isArray(opts.outDir)) {
+    throw new Error(`invalid outDir directories`);
   }
 
-  try {
-    fs.accessSync(opts.outDir);
-  } catch (e) {
-    fs.mkdirSync(opts.outDir);
-  }
+  opts.outDir = (opts.outDir as string[]).map(outDir => {
+    if (!path.isAbsolute(outDir)) {
+      return path.join(process.cwd(), outDir);
+    }
+    return outDir;
+  });
+
+  (opts.outDir as string[]).forEach(outDir => {
+    try {
+      fs.accessSync(outDir);
+    } catch (e) {
+      fs.mkdirSync(outDir);
+    }
+  });
 
   return Promise.all(opts.include.map(inputDir => {
     return walkDir(inputDir, opts);
@@ -86,14 +98,18 @@ function walkDir(dir: string, opts: GenerateOptions) {
                     wrapper: opts.wrapper
                   });
 
-                  const outFile = path.join(opts.outDir, fileName);
-                  fs.writeFile(outFile, jsonpContent, { encoding: 'utf-8'}, (err) => {
-                    if (err) {
-                      reject(err);
-                    } else {
-                      resolve();
-                    }
-                  });
+                  Promise.all([(opts.outDir as string[]).map(outDir => {
+                    return new Promise((resolve, reject) => {
+                      const outFile = path.join(outDir, fileName);
+                      fs.writeFile(outFile, jsonpContent, { encoding: 'utf-8'}, (err) => {
+                        if (err) {
+                          reject(err);
+                        } else {
+                          resolve();
+                        }
+                      });
+                    });
+                  })]).then(resolve).catch(reject);
 
                 } catch (e) {
                   reject(e);
@@ -125,7 +141,7 @@ export interface GenereateJsonpOptions {
 
 export interface GenerateOptions {
   include: string|string[];
-  outDir: string;
+  outDir: string|string[];
   filter?: (path: string) => boolean;
   fileName?: (path: string) => string;
   key?: (path: string) => string;

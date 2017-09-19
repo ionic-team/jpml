@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/ionic-team/jpml#readme",
   "devDependencies": {
+    "@types/node": "^8.0.28",
     "np": "^2.16.0",
     "typescript": "^2.5.2"
   }
